@@ -3,7 +3,29 @@ Theoretical Non Linear Kalman
 """
 import torch
 
-from Simulations.Lorenz_Atractor.parameters import getJacobian
+def getJacobian(x, g):
+    """Batched Jacobian of a state-space callable, evaluated at a batch of states.
+
+    The original code imported this from ``Simulations.Lorenz_Atractor.parameters``,
+    which is not present in this repository. It is a generic (model-agnostic)
+    autograd Jacobian so we define it here, mirroring
+    the per-sample autograd pattern used in ``RobustKalmanPY/robust_kalman.py``.
+
+    Args:
+        x: batch of states, shape ``[batch, m, 1]``.
+        g: callable mapping a single ``[m, 1]`` state to a ``[d, 1]`` output
+           (the SS model's ``f`` or ``h``).
+    Returns:
+        Jacobians ``dg/dx``, shape ``[batch, d, m]`` (``d == m`` for ``f``,
+        ``d == n`` for ``h``).
+    """
+    batch_size, m = x.shape[0], x.shape[1]
+    jac = []
+    for b in range(batch_size):
+        # jacobian of a [m,1] -> [d,1] map has shape [d,1,m,1]; collapse to [d,m]
+        Jb = torch.autograd.functional.jacobian(g, x[b])
+        jac.append(Jb.reshape(Jb.shape[0], m))
+    return torch.stack(jac, dim=0)
 
 class ExtendedKalmanFilter:
 

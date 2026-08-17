@@ -26,6 +26,6 @@ for i=1:T
     P(:,:,i+1) = (A-G(:,:,i)*C)*V(:,:,i)*(A-G(:,:,i)*C)'...
         +(B-G(:,:,i)*D)*(B-G(:,:,i)*D)';
     % theta_t
-    th = theta(P(:,:,i+1),c);
+    th = theta(P(:,:,i+1),c(i)); %c(i)
     V(:,:,i+1) = inv(inv(P(:,:,i+1))-th*eye(n));
 end

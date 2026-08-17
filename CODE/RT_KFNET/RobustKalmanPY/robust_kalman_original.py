@@ -3,7 +3,7 @@
 import torch
 import time
 import torch.nn.functional as func
-from CODE.RT_KFNET.KNet.RT_KalmanNet_nn_original import RT_KalmanNet_nn
+from KNet.RT_KalmanNet_nn_original import RT_KalmanNet_nn
 
 #%%
 # NOTE! There is a combination of numpy and torch thus if changing something use Tensors!
@@ -27,7 +27,8 @@ class RobustKalman():
             self.R = SysModel.R
         self.T = SysModel.T 
         self.y = test_data
-        self.c = torch.tensor(c)
+        self.c_init = torch.tensor(c)
+        self.c = self.c_init.clone()
         self.hard_coded = hard_coded
         self.sl_model = sl_model
         
@@ -75,7 +76,34 @@ class RobustKalman():
 
             # Initialize NN
             self.nn = RT_KalmanNet_nn(input_size_fcl,10, hidden_layers,1)
-        
+
+    def reset_state(self, test_data):
+        # Re-run the REKF recursion state for a new trajectory (self.nn weights are kept as-is)
+        self.y = test_data
+        self.c = self.c_init.clone()
+
+        if self.use_nn:
+            self.Xrekf = torch.zeros(self.n, self.T+1, requires_grad=True)
+            self.nn.previous_output = torch.zeros_like(self.nn.previous_output)
+        else:
+            self.Xrekf = torch.zeros(self.n, self.T+1)
+
+        self.Xrekf_prev = self.x0.squeeze(0)
+        self.y_prev = torch.zeros(self.p)
+        self.Xn_prev = torch.zeros(self.n)
+        self.Xn = torch.zeros(self.n, self.T)
+        self.V = torch.zeros(self.n, self.n, self.T+1)
+
+        if self.sl_model == 0:
+            self.V_prev = 1e-3*torch.eye(2, 2)
+        else:
+            self.V_prev = 1e-3*torch.eye(3, 3)
+
+        self.A = torch.zeros(self.n, self.n, self.T)
+        self.C = torch.zeros(self.p, self.n, self.T)
+        self.G = torch.zeros(self.n, self.p, self.T)
+        self.th = torch.zeros(self.T)
+
     # Below one can choose to use either the closed form Jacobian or the numerical one from Pytorch
     def fnComputeJacobianF(self, x_n_temp):
         if self.hard_coded:

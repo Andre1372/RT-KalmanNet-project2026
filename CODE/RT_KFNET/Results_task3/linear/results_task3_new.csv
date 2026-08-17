@@ -1,0 +1,4 @@
+model,mse_db,std_db,train_time_s,test_time_s,time_per_traj_s,time_per_step_ms,note
+Proposed,-2.856,0.403,5002.8,7.93,0.793,0.793,mean c_t = 0.07309
+REKF,-2.798,0.433,,6.88,0.688,0.688,c* = 0.08859
+Original,-2.535,0.327,667.7,8.78,0.878,0.878,mean c_t = 0.4845
