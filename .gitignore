@@ -1,0 +1,14 @@
+# virtual environment
+*env/
+env*/
+*venv/
+venv*/
+
+# private folders
+.*/
+.*
+!/.gitignore
+
+# Python
+*.pyc
+__pycache__/
